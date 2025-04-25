@@ -1,17 +1,32 @@
+import { motion } from 'framer-motion';
 import React from 'react'
+import { fadeDown } from '../../animation/animation';
+import menuItems from '../../assets/data/menu.json';
+import MenuItem from '../MenuItem/MenuItem';
 
 const Header: React.FC = () => {
   return (
-    <div className='w-full h-40'>
-        <div className='w-8/9 mx-auto py-8 flex justify-between items-center'>
-        <h2 className='text-3xl font-bold'>Mirceya</h2>
+    <div className='w-full h-auto'>
+        <div className='w-2/3 mx-auto py-8 flex justify-between items-center'>
+        <motion.h2 
+          variants={fadeDown}
+          initial="initial"
+          animate="animate"
+          transition={fadeDown.transition}
+        className='text-[2vw] font-bold'>
+           👨‍💻 Mirceya
+        </motion.h2>
         <nav>
-            <ul className='flex gap-6'>
-                <li className='text-lg after:duration-300 relative after:absolute after:h-0.5 after:bottom-[-6px] after:right-0 after:w-0 hover:after:w-full after:bg-white cursor-pointer'>Home</li>
-                <li className='text-lg after:duration-300 relative after:absolute after:h-0.5 after:bottom-[-6px] after:right-0 after:w-0 hover:after:w-full after:bg-white cursor-pointer'>About</li>
-                <li className='text-lg after:duration-300 relative after:absolute after:h-0.5 after:bottom-[-6px] after:right-0 after:w-0 hover:after:w-full after:bg-white cursor-pointer'>Projects</li>
-                <li className='text-lg after:duration-300 relative after:absolute after:h-0.5 after:bottom-[-6px] after:right-0 after:w-0 hover:after:w-full after:bg-white cursor-pointer'>Contact</li>
-            </ul>
+            <motion.ul 
+              variants={fadeDown}
+              initial="initial"
+              animate="animate"
+              transition={fadeDown.transition}
+                className='flex gap-6'>
+                {menuItems.map((item) => {
+                    return <MenuItem name={item.title} link={item.link}/>
+                })}
+            </motion.ul>
         </nav>
         </div>
     </div>
