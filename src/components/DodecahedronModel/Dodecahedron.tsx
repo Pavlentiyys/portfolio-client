@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils';
+// Правильный импорт с расширением .js
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const mainColor = "#20B2AA";
 const edgeColor = "#40E0D0";
@@ -14,9 +15,9 @@ const DodecahedronModel = () => {
   const radius = 2;
   const detail = 0;
 
-  const vertices = React.useMemo(() => {
+  const vertices = useMemo(() => {
     const geo = new THREE.DodecahedronGeometry(radius, detail);
-    const merged = mergeVertices(geo);
+    const merged = BufferGeometryUtils.mergeVertices(geo) as THREE.BufferGeometry;
     const posAttr = merged.getAttribute('position') as THREE.BufferAttribute;
 
     const points: THREE.Vector3[] = [];
@@ -28,7 +29,7 @@ const DodecahedronModel = () => {
     return points;
   }, [radius, detail]);
 
-  const pointPositions = React.useMemo(() => {
+  const pointPositions = useMemo(() => {
     const positions = new Float32Array(vertices.length * 3);
     vertices.forEach((v, i) => {
       positions[i * 3] = v.x;
@@ -38,7 +39,7 @@ const DodecahedronModel = () => {
     return positions;
   }, [vertices]);
 
-  const edges = React.useMemo(() => {
+  const edges = useMemo(() => {
     const geo = new THREE.DodecahedronGeometry(radius, detail);
     const edgeGeo = new THREE.EdgesGeometry(geo);
     const pos = edgeGeo.attributes.position.array;
@@ -56,13 +57,13 @@ const DodecahedronModel = () => {
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    const scale = 1 + Math.sin(t * 0.8) * 0.05;
+
     if (polyRef.current) {
       polyRef.current.rotation.y = t * 0.15;
       polyRef.current.rotation.x = Math.sin(t * 0.2) * 0.15;
       polyRef.current.rotation.z = Math.cos(t * 0.1) * 0.05;
-
-      const pulse = 1 + Math.sin(t * 0.8) * 0.05;
-      polyRef.current.scale.set(pulse, pulse, pulse);
+      polyRef.current.scale.set(scale, scale, scale);
     }
 
     if (edgesRef.current && polyRef.current) {
@@ -78,6 +79,7 @@ const DodecahedronModel = () => {
 
   return (
     <>
+      {/* Модель */}
       <mesh ref={polyRef}>
         <dodecahedronGeometry args={[radius, detail]} />
         <meshPhysicalMaterial
@@ -90,18 +92,17 @@ const DodecahedronModel = () => {
         />
       </mesh>
 
+      {/* Ребра */}
       <group ref={edgesRef}>
         {edges.map(([start, end], i) => (
           <line key={i}>
             <bufferGeometry>
-              <bufferAttribute
+            <bufferAttribute
                 attach="attributes-position"
-                count={2}
-                array={new Float32Array([
+                args={[new Float32Array([
                   start.x, start.y, start.z,
                   end.x, end.y, end.z,
-                ])}
-                itemSize={3}
+                ]), 3]}
               />
             </bufferGeometry>
             <lineBasicMaterial color={edgeColor} />
@@ -109,19 +110,16 @@ const DodecahedronModel = () => {
         ))}
       </group>
 
+      {/* Вершины */}
       <points ref={pointsRef}>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            count={vertices.length}
-            array={pointPositions}
-            itemSize={3}
+            args={[pointPositions, 3]}
           />
         </bufferGeometry>
         <pointsMaterial color={edgeColor} size={0.15} sizeAttenuation />
       </points>
-
-
     </>
   );
 };

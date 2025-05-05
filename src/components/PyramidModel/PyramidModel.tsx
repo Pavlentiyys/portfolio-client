@@ -133,15 +133,17 @@ const PyramidModel = () => {
         {edges.map((edge, index) => (
           <line key={index}>
             <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={2}
-                array={new Float32Array([
+            <bufferAttribute
+              attach="attributes-position"
+              args={[
+                new Float32Array([
                   edge[0].x, edge[0].y, edge[0].z,
                   edge[1].x, edge[1].y, edge[1].z
-                ])}
-                itemSize={3}
-              />
+                ]),
+                3 // itemSize
+              ]}
+            />
+
             </bufferGeometry>
             <lineBasicMaterial color={edgeColor} />
           </line>
@@ -151,12 +153,11 @@ const PyramidModel = () => {
       {/* Точки в вершинах */}
       <points ref={pointsRef}>
         <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={vertices.length}
-            array={pointPositions}
-            itemSize={3}
-          />
+        <bufferAttribute
+          attach="attributes-position"
+          args={[pointPositions, 3]}
+        />
+
         </bufferGeometry>
         <pointsMaterial
           color={edgeColor}

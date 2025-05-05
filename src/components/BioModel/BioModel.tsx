@@ -1,23 +1,24 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const mainColor = "#20B2AA"; 
-const edgeColor = "#40E0D0"; 
+const mainColor = "#20B2AA";
+const edgeColor = "#40E0D0";
 
 const PolyhedronModel = () => {
   const polyRef = useRef<THREE.Mesh>(null);
   const edgesRef = useRef<THREE.Group>(null);
   const pointsRef = useRef<THREE.Points>(null);
-  
-  const radius = 2; 
-  const detail = 0; 
-  
-  const vertices = React.useMemo(() => {
+
+  const radius = 2;
+  const detail = 0;
+
+  // Вершины
+  const vertices = useMemo(() => {
     const geo = new THREE.IcosahedronGeometry(radius, detail);
     const positions = geo.attributes.position.array;
     const points: THREE.Vector3[] = [];
-    
+
     for (let i = 0; i < positions.length; i += 3) {
       points.push(new THREE.Vector3(
         positions[i],
@@ -25,112 +26,100 @@ const PolyhedronModel = () => {
         positions[i + 2]
       ));
     }
-    
+
     return points;
   }, [radius, detail]);
-  
-  const pointPositions = React.useMemo(() => {
-    const positions = new Float32Array(vertices.length * 3);
-    
-    vertices.forEach((vertex, i) => {
-      positions[i * 3] = vertex.x;
-      positions[i * 3 + 1] = vertex.y;
-      positions[i * 3 + 2] = vertex.z;
+
+  // Геометрия точек
+  const pointsGeometry = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const positionArray = new Float32Array(vertices.length * 3);
+    vertices.forEach((v, i) => {
+      positionArray[i * 3] = v.x;
+      positionArray[i * 3 + 1] = v.y;
+      positionArray[i * 3 + 2] = v.z;
     });
-    
-    return positions;
+    geometry.setAttribute('position', new THREE.BufferAttribute(positionArray, 3));
+    return geometry;
   }, [vertices]);
-  
-  const edges = React.useMemo(() => {
-    const tempEdges: [THREE.Vector3, THREE.Vector3][] = [];
+
+  // Рёбра
+  const edges = useMemo(() => {
     const geo = new THREE.IcosahedronGeometry(radius, detail);
-    
-    const edgesGeometry = new THREE.EdgesGeometry(geo);
-    const positions = edgesGeometry.attributes.position.array;
-    
+    const edgeGeo = new THREE.EdgesGeometry(geo);
+    const positions = edgeGeo.attributes.position.array;
+    const lines: [THREE.Vector3, THREE.Vector3][] = [];
+
     for (let i = 0; i < positions.length; i += 6) {
-      const start = new THREE.Vector3(
-        positions[i],
-        positions[i + 1],
-        positions[i + 2]
-      );
-      
-      const end = new THREE.Vector3(
-        positions[i + 3],
-        positions[i + 4],
-        positions[i + 5]
-      );
-      
-      tempEdges.push([start, end]);
+      lines.push([
+        new THREE.Vector3(positions[i], positions[i + 1], positions[i + 2]),
+        new THREE.Vector3(positions[i + 3], positions[i + 4], positions[i + 5])
+      ]);
     }
-    
-    return tempEdges;
+
+    return lines;
   }, [radius, detail]);
-  
+
+  // Анимация
   useFrame(({ clock }) => {
-    const time = clock.getElapsedTime();
-    
+    const t = clock.getElapsedTime();
+
     if (polyRef.current) {
-      polyRef.current.rotation.y = time * 0.2;
-      polyRef.current.rotation.x = Math.sin(time * 0.3) * 0.2;
-      polyRef.current.rotation.z = Math.cos(time * 0.2) * 0.1;
+      polyRef.current.rotation.y = t * 0.2;
+      polyRef.current.rotation.x = Math.sin(t * 0.3) * 0.2;
+      polyRef.current.rotation.z = Math.cos(t * 0.2) * 0.1;
     }
-    
+
     if (edgesRef.current && polyRef.current) {
       edgesRef.current.rotation.copy(polyRef.current.rotation);
     }
-    
+
     if (pointsRef.current && polyRef.current) {
       pointsRef.current.rotation.copy(polyRef.current.rotation);
     }
   });
-  
+
   return (
     <>
+      {/* Тело */}
       <mesh ref={polyRef}>
         <icosahedronGeometry args={[radius, detail]} />
-        <meshPhysicalMaterial 
+        <meshPhysicalMaterial
           color={mainColor}
-          transparent={true}
+          transparent
           opacity={0.7}
           metalness={0.2}
           roughness={0.3}
           side={THREE.DoubleSide}
         />
       </mesh>
-      
+
+      {/* Рёбра */}
       <group ref={edgesRef}>
-        {edges.map((edge, index) => (
-          <line key={index}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={2}
-                array={new Float32Array([
-                  edge[0].x, edge[0].y, edge[0].z,
-                  edge[1].x, edge[1].y, edge[1].z
-                ])}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color={edgeColor} />
-          </line>
-        ))}
+        {edges.map(([start, end], i) => {
+          const lineGeo = useMemo(() => {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+              start.x, start.y, start.z,
+              end.x, end.y, end.z
+            ]);
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            return geometry;
+          }, [start, end]);
+
+          return (
+            <primitive object={new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: edgeColor }))} key={i} />
+
+          );
+        })}
       </group>
-      
-      <points ref={pointsRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={vertices.length}
-            array={pointPositions}
-            itemSize={3}
-          />
-        </bufferGeometry>
+
+      {/* Вершины */}
+      <points ref={pointsRef} geometry={pointsGeometry}>
         <pointsMaterial
           color={edgeColor}
           size={0.15}
-          sizeAttenuation={true}
+          sizeAttenuation
         />
       </points>
     </>

@@ -1,7 +1,7 @@
 [
-    { "title": "🏠 Home", "link": "/" },
-    { "title": "📔 About", "link": "/about" },
-    { "title": "🌌 Projects", "link": "/projects" },
-    { "title": "📫 Contact", "link": "/contact" }
+    { "title": "🏠 Home", "link": "/portfolio-client/" },
+    { "title": "📔 About", "link": "/portfolio-client/about" },
+    { "title": "🌌 Projects", "link": "/portfolio-client/projects" },
+    { "title": "📫 Contact", "link": "/portfolio-client/contact" }
   ]
   
