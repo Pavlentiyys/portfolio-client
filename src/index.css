@@ -4,13 +4,9 @@
   font-family: "Cascadia Code", sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-
-
-
 }
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 .gradient {
   background: linear-gradient(to right, #1b2526 0%, #131313 55%, #16363f 100%);
